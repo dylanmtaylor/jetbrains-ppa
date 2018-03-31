@@ -1,8 +1,7 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 import argparse
 import os
 import subprocess
-from pathlib import Path
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 
@@ -12,10 +11,10 @@ def build(package_directory, signing_key):
 
     env_copy = os.environ.copy()
     env_copy['DEBUILD_DPKG_BUILDPACKAGE_OPTS'] = '"--passphrase-file {} --batch --no-tty --no-use-agent"'.format(
-        Path(HERE, 'gpg-passphrase').as_posix()
+        os.path.join(HERE, 'gpg-passphrase')
     )
 
-    subprocess.Popen(cmd, cwd=Path(HERE, package_directory).as_posix(), env=env_copy).wait()
+    subprocess.Popen(cmd, cwd=os.path.join(HERE, package_directory), env=env_copy).wait()
 
 
 def main():

@@ -1,0 +1,9 @@
+version: '3'
+
+services:
+  packages:
+    build: .
+    volumes:
+      - /Users/jgroeger/Documents/GPG:/gpg
+    environment:
+     - GPG_TTY=/dev/console
