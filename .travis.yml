@@ -10,6 +10,14 @@ before_install:
   # Docker.
   - sudo apt-get update
 
+  # Install packages from Dockerfile
+  - sudo apt-get upgrade -y
+  - sudo apt-get install -y python python-pip debhelper ubuntu-dev-tools
+  - sudo apt-get autoremove
+  - sudo apt-get clean
+  - sudo rm -rf /var/lib/apt/lists/*
+  - sudo pip install launchpadlib
+
   # Now we can install the newer docker-engine which is required for the newer
   # docker-composer we will install next. The messy options are to force it to
   # be non-interactive (normally it asks you a bunch of config questions).
@@ -34,12 +42,15 @@ before_install:
 
   # Setup your application stack. You may need to tweak these commands if you
   # doing out-of-the-ordinary docker-compose builds.
-  - docker-compose pull
-  - docker-compose build
-  - docker-compose start
+  # - docker-compose pull
+  # - docker-compose build
+  # - docker-compose start
+
+  # Test building without docker
+
+  - python build
 
   # You will want this for logging. If one of your containers does not build for
   # whatever reason it's best to report that now before your tests start
   # otherwise it can be really tricky to debug why tests are failing sometimes.
   - docker ps
-
