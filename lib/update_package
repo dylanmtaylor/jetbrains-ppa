@@ -3,13 +3,14 @@
 from __future__ import print_function
 
 import argparse
-from pathlib import Path
 import urllib2
 import json
 import subprocess
 
 import launchpadlib
+import io
 import os
+import sys
 from launchpadlib.launchpad import Launchpad
 from launchpadlib.credentials import Credentials
 from lazr.restfulclient.errors import HTTPError, NotFound
@@ -43,9 +44,9 @@ def _get_latest_release_info(product_code):
     return latest_version
 
 def _read_product_code(package_directory):
-    api_code_file = Path(HERE, package_directory, 'API_CODE')
+    api_code_file = os.path.join(HERE, package_directory, 'API_CODE')
     try:
-        with api_code_file.open(encoding='UTF-8') as f:
+        with io.open(api_code_file, encoding='UTF-8') as f:
             api_code = f.read().strip()
             return api_code
     except Exception:
@@ -57,14 +58,14 @@ def get_jetbrains_version(package_directory):
     return latest_release_info['version']
 
 def get_git_version(package_directory):
-    working_dir = Path(HERE, package_directory).as_posix()
+    working_dir = os.path.join(HERE, package_directory)
     command = ['dpkg-parsechangelog', '-S', 'Version']
     return subprocess.check_output(command, cwd=working_dir).decode('UTF-8').strip()
 
 def get_ppa_version(package_directory, credentials_file='launchpad.cfg', service_root='production', distribution='artful'):
     package_name = package_directory.split('/')[1]
 
-    with open(os.path.abspath(credentials_file)) as f:
+    with io.open(os.path.abspath(credentials_file)) as f:
         text_credentials = f.read().strip()
 
         credentials = Credentials.from_string(text_credentials)
@@ -99,28 +100,26 @@ class LaunchpadWrapper(object):
         return ppa.getPublishedBinaries(distro_arch_series=series, status="Published")
 
 def update_git_version(package_directory, old_v, new_v):
-    working_dir = Path(HERE, package_directory, "debian").as_posix()
+    working_dir = os.path.join(HERE, package_directory, "debian")
     subprocess.call(['sed', '-i', 's/{}/{}/g'.format(old_v, new_v), 'changelog'], cwd=working_dir)
     subprocess.call(['sed', '-i', 's/{}/{}/g'.format(old_v, new_v), 'preinst'], cwd=working_dir)
 
 def build_and_upload(package_directory, new_v):
-    working_dir = Path(HERE)
     package_name = package_directory.split("/")[1]
-    build_exec = working_dir.joinpath('build').as_posix()
-    copy_exec = working_dir.joinpath('copy-binaries-on-launchpad').as_posix()
+    build_exec = os.path.join(HERE, 'build')
+    copy_exec = os.path.join(HERE, 'copy-binaries-on-launchpad')
 
     conf = {}
-    with open("ppa-cfg.cfg", "r") as f:
+    with io.open("ppa-cfg.cfg", encoding='UTF-8') as f:
         for line in f.read().split("\n"):
             (k, v) = line.split('=')
             conf[k] = v
-    with open("gpg-id.cfg", 'r') as f:
+    with io.open("gpg-id.cfg", encoding='UTF-8') as f:
         conf['gpg_id'] = f.read()
 
-    subprocess.call([build_exec, package_directory, conf['gpg_id']], cwd=working_dir.as_posix())
-    subprocess.call(['dput',
-                     'ppa:{}/{}'.format(conf['LP_NAME'], conf['LP_PPA_NAME']),
-                     '{}_{}_source.changes'.format(package_directory, new_v)], cwd=working_dir.as_posix())
+    subprocess.call([build_exec, package_directory, conf['gpg_id']], cwd=HERE)
+    subprocess.call(['dput', 'ppa:{}/{}'.format(conf['LP_NAME'], conf['LP_PPA_NAME']),
+                     '{}_{}_source.changes'.format(package_directory, new_v)], cwd=HERE)
 
 def main():
     parser = argparse.ArgumentParser()
