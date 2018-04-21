@@ -17,7 +17,7 @@ This project builds Debian packages for various JetBrains products. Currently:
 
 Installing, for example `intellij-idea-ultimate` is easy:
 
-    sudo apt-add-repository ppa:jonas-groeger/jetbrains
+    sudo add-apt-repository ppa:vantuz/jetbrains
     sudo apt-get update
     sudo apt-get intellij-idea-ultimate
 
